@@ -67,6 +67,44 @@ L0 澄清（门禁 1–3）→ L1 定位 → L2 提取（读码）→ 门禁 4 �
 
 不自研检索脚本——鉴权托管、限流额度高（未认证直连只有 10 次/分钟）、随官方 server 升级零维护。连接器不可用时会走降级路径，并在交付文档里**显式标注候选质量下降**。
 
+### 把这个连接器配上
+
+需要做到的事只有一件：让你的 agent 能调到上面那 5 个工具。两条路，任选其一。
+
+**A. 用官方托管端点（最省事）**。GitHub 自己有托管的 MCP server，用 PAT 作为 Bearer 鉴权：
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer <你的 PAT>" }
+    }
+  }
+}
+```
+
+把这段放进客户端的 MCP 配置即可：Claude Desktop / Cursor 各有自己的配置文件；DSH 走 MCP 连接器面板的「导入 JSON」。
+
+**B. 本地跑官方 server**。
+
+```bash
+docker run -i --rm \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN=<你的 PAT> \
+  ghcr.io/github/github-mcp-server
+```
+
+在客户端里把这条命令注册成 `stdio` 类型的 server。不想用 Docker，也可以从 [`github/github-mcp-server`](https://github.com/github/github-mcp-server) 下二进制。
+
+**PAT 权限按需最小化**。只读公开仓库时，fine-grained token 一个权限都不勾也能用；要读私有仓库，就给对应的那几个仓库 `Contents: Read`。本 skill 全程只读：不写、不开 PR、不发评论。
+
+**接好之后怎么确认**。问一句「你现在能调到哪些 github 工具」，看有没有 `search_repositories`、`search_code`、`get_file_contents`、`pull_request_read`、`search_issues` 这 5 个。
+
+**只暴露了一部分会怎样**。缺 `search_code`：定位阶段退化成只用仓库搜索，候选质量下降；缺 `get_file_contents`：读不到代码，「深读代码提取事实」这一整层失效。这两种情况都会在交付文档里显式标注为降级。
+
+全程不需要 `gh` CLI，也不会调用任何 shell 命令。
+
 ### Claude Code
 
 ```bash

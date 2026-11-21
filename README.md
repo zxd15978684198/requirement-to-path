@@ -71,6 +71,44 @@ This skill **hard-depends on the `github` connector** (an MCP server). All disco
 
 It does not roll its own search script — auth is managed for you, the rate-limit budget is far higher (unauthenticated direct calls get 10 requests a minute), and it costs nothing to maintain as the official server evolves. If the connector is unavailable the skill falls back to a degraded path and **flags the drop in candidate quality** in the delivered document.
 
+### Wiring up the `github` connector
+
+All the skill needs is for your agent to reach those five tools. Two ways, pick either.
+
+**A. Hosted endpoint — least setup.** GitHub runs a hosted MCP server; authenticate with a PAT:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer <your PAT>" }
+    }
+  }
+}
+```
+
+Paste that into your client's MCP configuration: Claude Desktop and Cursor use their own config file, and DSH accepts it through the connectors panel's "import JSON".
+
+**B. Run the official server locally.**
+
+```bash
+docker run -i --rm \
+  -e GITHUB_PERSONAL_ACCESS_TOKEN=<your PAT> \
+  ghcr.io/github/github-mcp-server
+```
+
+Register that as a `stdio` server in your client. No Docker? Take a binary from [`github/github-mcp-server`](https://github.com/github/github-mcp-server).
+
+**Token scope — keep it minimal.** For public repositories only, a fine-grained token needs no permissions at all. To read private repositories, grant `Contents: Read` on just those repositories. This skill never writes, never opens pull requests, never comments.
+
+**Verify it took.** Ask your agent which `github` tools it can reach. You should see `search_repositories`, `search_code`, `get_file_contents`, `pull_request_read`, `search_issues`.
+
+**If only some of the tools are exposed:** without `search_code` the discovery stage falls back to repository search and candidate quality drops; without `get_file_contents` the code-reading stage cannot run at all. Both cases are flagged as degraded inside the delivered document.
+
+No `gh` CLI and no shell commands are involved at any point.
+
 ### Claude Code
 
 ```bash
