@@ -1,0 +1,37 @@
+name: self-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 脚本可编译
+        run: python -m py_compile references/self_check.py evals/harness.py
+
+      # --skill：声明唯一 + 权威位置可达 + frontmatter 版本与账本末行同步
+      # 退出码 0 只代表「机械项没查出问题」，不是能力证明
+      - name: SKILL.md 自洽检查
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python references/self_check.py --skill SKILL.md
+
+      - name: 示例交付物能跑通自检（允许 exit 2 = 有未核项）
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          set +e
+          python references/self_check.py examples/full-walkthrough.md
+          code=$?
+          echo "exit=$code"
+          # 1 = 硬违规；2 = 有未核项（示例文档允许）
+          [ "$code" -le 2 ]
