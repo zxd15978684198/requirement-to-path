@@ -29,6 +29,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      # 两个脚本先过一遍编译，语法错误比逻辑错误更该在第一步就断。
+      - name: 语法编译
+        run: python -m py_compile references/self_check.py evals/harness.py
+
       # 主文件的自洽检查：版本对账 / 哨兵位置 / 禁用形态 / 自述项数。
       # 这一项是硬门禁——退出码非 0 直接红。
       - name: SKILL.md 自洽检查
