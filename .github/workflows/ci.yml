@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  self-check:
+    name: 自洽检查 · py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # 主文件的自洽检查：版本对账 / 哨兵位置 / 禁用形态 / 自述项数。
+      # 这一项是硬门禁——退出码非 0 直接红。
+      - name: SKILL.md 自洽检查
+        run: python references/self_check.py --skill SKILL.md
+
+      # 参考文档与样例不该出现硬违规（退出码 1）。
+      # 退出码 2 表示「无违规但有未核项」——参考文档本就不含交付章节，属预期，放行。
+      - name: references/ 与 examples/ 无硬违规
+        run: |
+          bad=0
+          for f in references/*.md examples/*.md; do
+            rc=0
+            python references/self_check.py "$f" >/dev/null 2>&1 || rc=$?
+            case "$rc" in
+              0|2) echo "OK   $f (exit $rc)" ;;
+              *)   echo "::error file=$f::self_check 退出码 $rc（1=硬违规）"; bad=1 ;;
+            esac
+          done
+          exit "$bad"
+
+      # SKILL.md 里点到名的每个文件都必须真的存在——悬空引用是这本账最容易犯的错。
+      - name: 引用完整性
+        run: |
+          python - <<'PY'
+          import pathlib, re, sys
+
+          text = pathlib.Path("SKILL.md").read_text(encoding="utf-8")
+          refs = set(re.findall(
+              r"`((?:references|examples|evals)/[\w./-]+\.(?:md|py|json))`", text))
+          missing = sorted(r for r in refs if not pathlib.Path(r).exists())
+
+          print(f"SKILL.md 引用 {len(refs)} 个文件，缺失 {len(missing)} 个")
+          for m in missing:
+              print(f"::error file=SKILL.md::引用的文件不存在: {m}")
+          sys.exit(1 if missing else 0)
+          PY
+
+      # 评测用例的结构校验 + harness 至少能起来（它不评测 agent，只评测产出物）。
+      - name: evals 用例合法 & harness 可运行
+        run: |
+          python - <<'PY'
+          import glob, json, sys
+
+          files = sorted(glob.glob("evals/*.json"))
+          if not files:
+              print("::error::evals/ 下没有用例"); sys.exit(1)
+          for p in files:
+              d = json.load(open(p, encoding="utf-8"))
+              for k in ("skills", "query", "expected_behavior"):
+                  if k not in d:
+                      print(f"::error file={p}::缺少字段 {k}"); sys.exit(1)
+          print(f"{len(files)} 个用例通过结构校验")
+          PY
+          python evals/harness.py --help > /dev/null

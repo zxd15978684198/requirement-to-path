@@ -1,0 +1,26 @@
+# 内部实测证据（本地保留，不随仓库发布）
+#
+# 这里原本是作者本机的实验脚手架：探针脚本（_t_*.py）、变异夹具（_mut/）、
+# 跑批产物（probe/.run/）、17 道门禁审计器（audit.py）等，约 2.2 MB。
+# 它们依赖作者本机的目录布局，对使用者没有价值，因此不提交。
+#
+# 可复现的结论不在这里，在 references/verification-log.md：
+#   每一次实测的版本、验证方式、覆盖范围与结论都记在那份账本里。
+.eval/*
+!.eval/README.md
+
+# 备份文件（含历史上被替换掉的旧版主文件与已退役文档）
+*.bak
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 本地安装元数据（skill 装到本机时生成，含安装时间与来源）
+_user_meta.json
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
