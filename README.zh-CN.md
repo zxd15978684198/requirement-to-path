@@ -8,6 +8,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/zxd15978684198/requirement-to-path?style=social)](https://github.com/zxd15978684198/requirement-to-path)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](references/self_check.py)
 [![零依赖](https://img.shields.io/badge/dependencies-0-brightgreen)](references/self_check.py)
+[![CI](https://github.com/zxd15978684198/requirement-to-path/actions/workflows/ci.yml/badge.svg)](https://github.com/zxd15978684198/requirement-to-path/actions/workflows/ci.yml)
 
 一个给 AI coding agent 用的 **skill**（不是库，不是 CLI）。它把「帮我实现某个模块」这件事拆成五层，每层都有硬门禁，最后交付一份**每步都带通过信号**的施工路径。
 

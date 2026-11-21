@@ -8,6 +8,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/zxd15978684198/requirement-to-path?style=social)](https://github.com/zxd15978684198/requirement-to-path)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](references/self_check.py)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](references/self_check.py)
+[![CI](https://github.com/zxd15978684198/requirement-to-path/actions/workflows/ci.yml/badge.svg)](https://github.com/zxd15978684198/requirement-to-path/actions/workflows/ci.yml)
 
 A **skill** for AI coding agents — not a library, not a CLI. It splits "build me this module" into five layers, each behind a hard gate, and ends with an implementation path where **every step carries a pass signal**.
 
